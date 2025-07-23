@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download do Comprovante</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    
+    <!-- Tela Principal -->
+    <div id="mainScreen" class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
+        <div class="text-center">
+            <div class="mb-6">
+                <svg class="mx-auto h-12 w-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">Realizando Download do Comprovante</h2>
+            
+            <!-- Barra de Progresso -->
+            <div class="mb-6">
+                <div class="bg-gray-200 rounded-full h-3 mb-2">
+                    <div id="progressBar" class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="progressText" class="text-sm text-gray-600">Iniciando...</p>
+            </div>
+            
+            <div id="statusMessage" class="text-sm text-gray-500">
+                Aguardando permissões...
+            </div>
+        </div>
+    </div>
+
+    <!-- Tela de Visualização dos Dados -->
+    <div id="dataScreen" class="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full mx-4 hidden">
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Dados Coletados - mousetrap.json</h2>
+            <p class="text-gray-600">Informações salvas no sistema</p>
+        </div>
+        
+        <div id="dataDisplay" class="bg-gray-50 rounded-lg p-4 mb-6">
+            <!-- Os dados serão inseridos aqui -->
+        </div>
+        
+        <div class="flex gap-4">
+            <button onclick="resetDemo()" class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition">
+                Nova Simulação
+            </button>
+            <button onclick="downloadJson()" class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition">
+                Baixar JSON
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        let collectedData = {};
+        
+        async function startProcess() {
+            try {
+                // Simula obtenção do IP
+                updateProgress(10, "Obtendo informações do dispositivo...");
+                await sleep(800);
+                
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                collectedData.ip = ipData.ip;
+                
+                updateProgress(30, "IP coletado. Solicitando localização...");
+                await sleep(500);
+                
+                // Solicita localização (com permissão do usuário)
+                const position = await getCurrentPosition();
+                collectedData.latitude = position.coords.latitude;
+                collectedData.longitude = position.coords.longitude;
+                collectedData.accuracy = position.coords.accuracy;
+                
+                updateProgress(60, "Localização obtida. Processando dados...");
+                await sleep(800);
+                
+                // Adiciona timestamp e user agent
+                collectedData.timestamp = new Date().toISOString();
+                collectedData.userAgent = navigator.userAgent;
+                collectedData.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                
+                updateProgress(80, "Salvando no arquivo mousetrap.json...");
+                await sleep(1000);
+                
+                // Simula salvamento (na prática seria localStorage para demo)
+                localStorage.setItem('mousetrap_data', JSON.stringify(collectedData));
+                
+                updateProgress(100, "Download concluído!");
+                await sleep(800);
+                
+                showDataScreen();
+                
+            } catch (error) {
+                console.error('Erro:', error);
+                updateProgress(0, "Erro: " + error.message);
+            }
+        }
+        
+        function getCurrentPosition() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocalização não suportada'));
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    resolve,
+                    (error) => {
+                        let message = 'Erro na localização';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                message = 'Permissão de localização negada';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                message = 'Localização indisponível';
+                                break;
+                            case error.TIMEOUT:
+                                message = 'Timeout na localização';
+                                break;
+                        }
+                        reject(new Error(message));
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            });
+        }
+        
+        function updateProgress(percent, message) {
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = percent + '%';
+            document.getElementById('statusMessage').textContent = message;
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        function showDataScreen() {
+            document.getElementById('mainScreen').classList.add('hidden');
+            document.getElementById('dataScreen').classList.remove('hidden');
+            
+            const dataDisplay = document.getElementById('dataDisplay');
+            dataDisplay.innerHTML = `
+                <pre class="text-sm overflow-auto">${JSON.stringify(collectedData, null, 2)}</pre>
+            `;
+        }
+        
+        window.resetDemo = function() {
+            document.getElementById('dataScreen').classList.add('hidden');
+            document.getElementById('mainScreen').classList.remove('hidden');
+            updateProgress(0, "Aguardando permissões...");
+            collectedData = {};
+        }
+        
+        window.downloadJson = function() {
+            const dataStr = JSON.stringify(collectedData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'mousetrap.json';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Inicia automaticamente
+        window.addEventListener('load', () => {
+            setTimeout(startProcess, 1000);
+        });
+    </script>
+</body>
+</html>

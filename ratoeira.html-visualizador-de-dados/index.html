@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MouseTrap - Dados Coletados</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center px-4">
+        <div class="bg-gray-800 rounded-lg shadow-2xl p-8 w-full max-w-md border border-red-500">
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center mb-4">
+                    <i class="fas fa-lock text-4xl text-red-500 mr-3"></i>
+                    <h1 class="text-3xl font-bold text-red-400">MOUSETRAP</h1>
+                </div>
+                <p class="text-gray-400">Acesso Restrito</p>
+            </div>
+            
+            <form onsubmit="verificarSenha(event)" class="space-y-6">
+                <div>
+                    <label for="senha" class="block text-sm font-medium text-gray-300 mb-2">
+                        <i class="fas fa-key mr-2"></i>Senha de Acesso
+                    </label>
+                    <input 
+                        type="password" 
+                        id="senha" 
+                        class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                        placeholder="Digite a senha..."
+                        required
+                        autocomplete="off"
+                    >
+                </div>
+                
+                <button 
+                    type="submit" 
+                    class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
+                >
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    Acessar Sistema
+                </button>
+                
+                <div id="loginError" class="text-red-400 text-sm text-center hidden">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Senha incorreta. Acesso negado.
+                </div>
+            </form>
+            
+            <div class="mt-8 text-center text-xs text-gray-500">
+                <i class="fas fa-shield-alt mr-1"></i>
+                Sistema protegido por autenticação
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tela Principal (oculta inicialmente) -->
+    <div id="mainContent" class="container mx-auto px-4 py-8 max-w-6xl hidden">
+        
+        <!-- Header -->
+        <div class="text-center mb-8 relative">
+            <button onclick="logout()" class="absolute top-0 right-0 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg transition text-sm">
+                <i class="fas fa-sign-out-alt mr-2"></i>Sair
+            </button>
+            <div class="flex items-center justify-center mb-4">
+                <i class="fas fa-database text-4xl text-red-500 mr-3"></i>
+                <h1 class="text-4xl font-bold text-red-400">MOUSETRAP</h1>
+            </div>
+            <p class="text-gray-400">Sistema de Monitoramento de Acessos</p>
+            <div class="mt-4 flex justify-center space-x-4">
+                <span id="totalAcessos" class="bg-red-600 px-4 py-2 rounded-lg">
+                    <i class="fas fa-eye mr-2"></i>
+                    <span id="contadorAcessos">0</span> acessos registrados
+                </span>
+                <span id="ultimoAcesso" class="bg-gray-700 px-4 py-2 rounded-lg">
+                    <i class="fas fa-clock mr-2"></i>
+                    <span id="tempoUltimoAcesso">--</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Controles -->
+        <div class="mb-6 flex flex-wrap gap-4 justify-center">
+            <button onclick="carregarDados()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition">
+                <i class="fas fa-sync-alt mr-2"></i>Atualizar Dados
+            </button>
+            <button onclick="limparDados()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition">
+                <i class="fas fa-trash mr-2"></i>Limpar Dados
+            </button>
+            <button onclick="exportarDados()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition">
+                <i class="fas fa-download mr-2"></i>Exportar JSON
+            </button>
+            <input type="file" id="fileInput" accept=".json" onchange="importarArquivo()" class="hidden">
+            <button onclick="document.getElementById('fileInput').click()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition">
+                <i class="fas fa-upload mr-2"></i>Importar JSON
+            </button>
+        </div>
+
+        <!-- Status -->
+        <div id="statusMessage" class="mb-6 p-4 rounded-lg bg-gray-800 text-center hidden">
+            <i class="fas fa-info-circle mr-2"></i>
+            <span id="statusText">Carregando dados...</span>
+        </div>
+
+        <!-- Dados Principais -->
+        <div id="dadosContainer" class="space-y-6">
+            <!-- Os dados serão inseridos aqui -->
+        </div>
+
+        <!-- Mapa -->
+        <div id="mapaContainer" class="mt-8 hidden">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4 text-red-400">
+                    <i class="fas fa-map-marker-alt mr-2"></i>Localização dos Acessos
+                </h3>
+                <div id="mapa" class="w-full h-96 bg-gray-700 rounded-lg flex items-center justify-center">
+                    <p class="text-gray-400">
+                        <i class="fas fa-map mr-2"></i>
+                        Mapa seria carregado aqui (Google Maps/OpenStreetMap)
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        let dadosColetados = [];
+        const SENHA_CORRETA = '@TxQwpu]';
+        
+        // Verificação de autenticação
+        window.addEventListener('load', () => {
+            const autenticado = sessionStorage.getItem('mousetrap_auth');
+            if (autenticado === 'true') {
+                mostrarSistema();
+            }
+        });
+        
+        window.verificarSenha = function(event) {
+            event.preventDefault();
+            const senha = document.getElementById('senha').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (senha === SENHA_CORRETA) {
+                sessionStorage.setItem('mousetrap_auth', 'true');
+                mostrarSistema();
+            } else {
+                errorDiv.classList.remove('hidden');
+                document.getElementById('senha').value = '';
+                document.getElementById('senha').classList.add('border-red-500');
+                
+                setTimeout(() => {
+                    errorDiv.classList.add('hidden');
+                    document.getElementById('senha').classList.remove('border-red-500');
+                }, 3000);
+            }
+        }
+        
+        function mostrarSistema() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            carregarDados();
+            // Atualiza automaticamente a cada 30 segundos
+            setInterval(carregarDados, 30000);
+        }
+        
+        window.logout = function() {
+            sessionStorage.removeItem('mousetrap_auth');
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('senha').value = '';
+        }
+        
+        window.carregarDados = function() {
+            mostrarStatus('Carregando dados do mousetrap.json...', 'info');
+            
+            // Tenta carregar do localStorage (simulação)
+            const dadosLocal = localStorage.getItem('mousetrap_data');
+            
+            if (dadosLocal) {
+                try {
+                    const dados = JSON.parse(dadosLocal);
+                    dadosColetados = Array.isArray(dados) ? dados : [dados];
+                    exibirDados();
+                    ocultarStatus();
+                } catch (error) {
+                    mostrarStatus('Erro ao ler dados locais: ' + error.message, 'error');
+                }
+            } else {
+                // Em um ambiente real, faria fetch do arquivo mousetrap.json
+                mostrarStatus('Arquivo mousetrap.json não encontrado. Importe um arquivo ou use a ferramenta de coleta.', 'warning');
+                dadosColetados = [];
+                exibirDados();
+            }
+        }
+        
+        function exibirDados() {
+            const container = document.getElementById('dadosContainer');
+            const totalElement = document.getElementById('contadorAcessos');
+            const ultimoElement = document.getElementById('tempoUltimoAcesso');
+            
+            totalElement.textContent = dadosColetados.length;
+            
+            if (dadosColetados.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="fas fa-inbox text-6xl text-gray-600 mb-4"></i>
+                        <h3 class="text-xl text-gray-400 mb-2">Nenhum dado encontrado</h3>
+                        <p class="text-gray-500">Use a ferramenta de coleta ou importe um arquivo JSON</p>
+                    </div>
+                `;
+                ultimoElement.textContent = '--';
+                return;
+            }
+            
+            // Ordena por timestamp (mais recente primeiro)
+            dadosColetados.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            // Atualiza último acesso
+            const ultimoDado = dadosColetados[0];
+            ultimoElement.textContent = formatarTempo(ultimoDado.timestamp);
+            
+            // Gera HTML dos dados
+            container.innerHTML = dadosColetados.map((dados, index) => `
+                <div class="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-bold text-red-400">
+                            <i class="fas fa-user-secret mr-2"></i>
+                            Acesso #${dadosColetados.length - index}
+                        </h3>
+                        <span class="text-sm text-gray-400">
+                            ${formatarDataCompleta(dados.timestamp)}
+                        </span>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <!-- Informações de Rede -->
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-semibold text-blue-400 border-b border-blue-400 pb-2">
+                                <i class="fas fa-network-wired mr-2"></i>Informações de Rede
+                            </h4>
+                            
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">IP Address:</span>
+                                    <span class="font-mono text-yellow-400">${dados.ip || 'N/A'}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Timezone:</span>
+                                    <span class="text-green-400">${dados.timezone || 'N/A'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Localização -->
+                        <div class="space-y-4">
+                            <h4 class="text-lg font-semibold text-green-400 border-b border-green-400 pb-2">
+                                <i class="fas fa-map-marker-alt mr-2"></i>Localização
+                            </h4>
+                            
+                            <div class="space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Latitude:</span>
+                                    <span class="font-mono text-blue-400">${dados.latitude ? dados.latitude.toFixed(6) : 'N/A'}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Longitude:</span>
+                                    <span class="font-mono text-blue-400">${dados.longitude ? dados.longitude.toFixed(6) : 'N/A'}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Precisão:</span>
+                                    <span class="text-orange-400">${dados.accuracy ? Math.round(dados.accuracy) + 'm' : 'N/A'}</span>
+                                </div>
+                                ${dados.latitude && dados.longitude ? `
+                                <div class="mt-3">
+                                    <a href="https://www.google.com/maps?q=${dados.latitude},${dados.longitude}" 
+                                       target="_blank" 
+                                       class="inline-flex items-center text-blue-400 hover:text-blue-300 transition">
+                                        <i class="fas fa-external-link-alt mr-1"></i>
+                                        Ver no Google Maps
+                                    </a>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Agent -->
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold text-purple-400 border-b border-purple-400 pb-2 mb-3">
+                            <i class="fas fa-desktop mr-2"></i>Dispositivo
+                        </h4>
+                        <div class="bg-gray-900 p-3 rounded text-xs font-mono text-gray-300 break-all">
+                            ${dados.userAgent || 'N/A'}
+                        </div>
+                    </div>
+                    
+                    <!-- Dados Raw -->
+                    <div class="mt-4">
+                        <button onclick="toggleRawData(${index})" class="text-gray-400 hover:text-white transition">
+                            <i class="fas fa-code mr-2"></i>
+                            <span id="toggleText${index}">Mostrar dados raw</span>
+                        </button>
+                        <div id="rawData${index}" class="hidden mt-3 bg-black p-4 rounded text-xs font-mono overflow-auto">
+                            <pre>${JSON.stringify(dados, null, 2)}</pre>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Mostra container do mapa se há dados de localização
+            const temLocalizacao = dadosColetados.some(d => d.latitude && d.longitude);
+            document.getElementById('mapaContainer').classList.toggle('hidden', !temLocalizacao);
+        }
+        
+        window.toggleRawData = function(index) {
+            const rawDiv = document.getElementById(`rawData${index}`);
+            const toggleText = document.getElementById(`toggleText${index}`);
+            
+            if (rawDiv.classList.contains('hidden')) {
+                rawDiv.classList.remove('hidden');
+                toggleText.textContent = 'Ocultar dados raw';
+            } else {
+                rawDiv.classList.add('hidden');
+                toggleText.textContent = 'Mostrar dados raw';
+            }
+        }
+        
+        window.limparDados = function() {
+            if (confirm('Tem certeza que deseja limpar todos os dados?')) {
+                localStorage.removeItem('mousetrap_data');
+                dadosColetados = [];
+                exibirDados();
+                mostrarStatus('Dados limpos com sucesso!', 'success');
+            }
+        }
+        
+        window.exportarDados = function() {
+            if (dadosColetados.length === 0) {
+                mostrarStatus('Nenhum dado para exportar!', 'warning');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(dadosColetados, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `mousetrap_export_${new Date().toISOString().slice(0,10)}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            
+            mostrarStatus('Dados exportados com sucesso!', 'success');
+        }
+        
+        window.importarArquivo = function() {
+            const file = document.getElementById('fileInput').files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const dados = JSON.parse(e.target.result);
+                    dadosColetados = Array.isArray(dados) ? dados : [dados];
+                    localStorage.setItem('mousetrap_data', JSON.stringify(dadosColetados));
+                    exibirDados();
+                    mostrarStatus(`${dadosColetados.length} registro(s) importado(s) com sucesso!`, 'success');
+                } catch (error) {
+                    mostrarStatus('Erro ao importar arquivo: ' + error.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function mostrarStatus(mensagem, tipo) {
+            const statusDiv = document.getElementById('statusMessage');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = mensagem;
+            statusDiv.className = `mb-6 p-4 rounded-lg text-center ${getStatusClass(tipo)}`;
+            statusDiv.classList.remove('hidden');
+            
+            if (tipo === 'success' || tipo === 'warning') {
+                setTimeout(ocultarStatus, 3000);
+            }
+        }
+        
+        function ocultarStatus() {
+            document.getElementById('statusMessage').classList.add('hidden');
+        }
+        
+        function getStatusClass(tipo) {
+            switch(tipo) {
+                case 'success': return 'bg-green-800 text-green-200';
+                case 'error': return 'bg-red-800 text-red-200';
+                case 'warning': return 'bg-yellow-800 text-yellow-200';
+                default: return 'bg-gray-800 text-gray-200';
+            }
+        }
+        
+        function formatarTempo(timestamp) {
+            const agora = new Date();
+            const data = new Date(timestamp);
+            const diff = agora - data;
+            
+            const minutos = Math.floor(diff / 60000);
+            const horas = Math.floor(diff / 3600000);
+            const dias = Math.floor(diff / 86400000);
+            
+            if (minutos < 1) return 'Agora mesmo';
+            if (minutos < 60) return `${minutos}min atrás`;
+            if (horas < 24) return `${horas}h atrás`;
+            return `${dias}d atrás`;
+        }
+        
+        function formatarDataCompleta(timestamp) {
+            return new Date(timestamp).toLocaleString('pt-BR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>
